@@ -3,6 +3,7 @@ import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';
 import 'core/emv_processor.dart';
 import 'models/emv_aid.dart';
 import 'models/emv_card.dart';
+import 'models/nfc_status.dart';
 import 'models/smart_emv_exception.dart';
 import 'smart_emv_config.dart';
 import 'transport/flutter_nfc_kit_transceiver.dart';
@@ -24,15 +25,46 @@ class SmartEmv {
   SmartEmv({this.config = const SmartEmvConfig.defaultConfig()})
     : _logger = EmvLogger(enabled: config.enableLogging);
 
-  /// Checks if NFC hardware is present and enabled on this device.
-  Future<bool> isNfcAvailable() async {
+  /// Returns the current NFC hardware state as a typed [NfcStatus].
+  ///
+  /// Prefer this over [isNfcAvailable] when you need to differentiate between
+  /// a device with no NFC hardware ([NfcStatus.notSupported]) and one where
+  /// NFC is toggled off in settings ([NfcStatus.disabled]).
+  ///
+  /// ```dart
+  /// final status = await smartEmv.getNfcStatus();
+  /// switch (status) {
+  ///   case NfcStatus.available:
+  ///     final card = await smartEmv.readCard();
+  ///   case NfcStatus.disabled:
+  ///     // On Android, prompt user to open NFC settings.
+  ///   case NfcStatus.notSupported:
+  ///     // Show permanent "NFC not supported" message.
+  /// }
+  /// ```
+  Future<NfcStatus> getNfcStatus() async {
     try {
-      final state = await FlutterNfcKit.nfcAvailability;
-      return state == NFCAvailability.available;
+      final availability = await FlutterNfcKit.nfcAvailability;
+      switch (availability) {
+        case NFCAvailability.available:
+          return NfcStatus.available;
+        case NFCAvailability.disabled:
+          return NfcStatus.disabled;
+        case NFCAvailability.not_supported:
+          return NfcStatus.notSupported;
+      }
     } catch (_) {
-      return false;
+      return NfcStatus.notSupported;
     }
   }
+
+  /// Checks if NFC hardware is present and enabled on this device.
+  ///
+  /// Returns `true` only when [getNfcStatus] returns [NfcStatus.available].
+  /// Use [getNfcStatus] when you need to distinguish between NFC being disabled
+  /// vs. not supported at the hardware level.
+  Future<bool> isNfcAvailable() async =>
+      (await getNfcStatus()) == NfcStatus.available;
 
   /// Begins polling for a contactless EMV card. Once discovered, reads standard
   /// and custom fields, and returns a strongly-typed [EmvCard].
@@ -74,6 +106,7 @@ class SmartEmv {
         timeout: Duration(seconds: config.timeoutSeconds),
         iosAlertMessage: config.iosAlertMessage,
         readIso15693: false,
+        androidReaderModeFlags: config.androidReaderModeFlags,
       );
 
       _logger.log(
@@ -126,20 +159,21 @@ class SmartEmv {
       _activeTransceiver = null;
 
       // Map standard flutter_nfc_kit and platform error codes to SmartEmvErrorCodes
-      if (pe.code == '409' || pe.code == '500') {
-        if (pe.message?.toLowerCase().contains('timeout') ?? false) {
-          throw SmartEmvException(
-            code: SmartEmvErrorCode.timeout,
-            message: 'NFC session timed out before a card was read.',
-            originalError: pe,
-          );
-        } else if (pe.message?.toLowerCase().contains('user cancel') ?? false) {
-          throw SmartEmvException(
-            code: SmartEmvErrorCode.userCancelled,
-            message: 'NFC scanning session was cancelled by the user.',
-            originalError: pe,
-          );
-        }
+      if (pe.code == '408' ||
+          (pe.code == '409' || pe.code == '500') &&
+              (pe.message?.toLowerCase().contains('timeout') ?? false)) {
+        throw SmartEmvException(
+          code: SmartEmvErrorCode.timeout,
+          message: 'NFC session timed out before a card was read.',
+          originalError: pe,
+        );
+      } else if ((pe.code == '409' || pe.code == '500') &&
+          (pe.message?.toLowerCase().contains('user cancel') ?? false)) {
+        throw SmartEmvException(
+          code: SmartEmvErrorCode.userCancelled,
+          message: 'NFC scanning session was cancelled by the user.',
+          originalError: pe,
+        );
       }
 
       throw SmartEmvException(

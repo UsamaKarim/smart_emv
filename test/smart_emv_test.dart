@@ -47,6 +47,19 @@ void main() {
         config.terminalConfig.currencyCode,
         equals('0840'),
       ); // USD ISO 4217
+      // Default flags: FLAG_READER_SKIP_NDEF_CHECK (0x80) | FLAG_READER_NO_PLATFORM_SOUNDS (0x100)
+      expect(config.androidReaderModeFlags, equals(0x80 | 0x100));
+    });
+
+    test('SmartEmvConfig androidReaderModeFlags can be set to zero (platform default)', () {
+      const config = SmartEmvConfig(androidReaderModeFlags: 0);
+      expect(config.androidReaderModeFlags, equals(0));
+    });
+
+    test('SmartEmvConfig androidReaderModeFlags can be set to custom value', () {
+      // Only skip NDEF, keep system sounds
+      const config = SmartEmvConfig(androidReaderModeFlags: 0x80);
+      expect(config.androidReaderModeFlags, equals(0x80));
     });
   });
 

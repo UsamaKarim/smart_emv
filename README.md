@@ -96,33 +96,102 @@ final _smartEmv = SmartEmv(
 );
 
 Future<void> scanCard() async {
-  // 1. Check if NFC is turned on
-  final bool isNfcOn = await _smartEmv.isNfcAvailable();
-  if (!isNfcOn) {
-    print("NFC is disabled or unsupported.");
-    return;
+  // 1. Check NFC status with full detail
+  final NfcStatus status = await _smartEmv.getNfcStatus();
+
+  switch (status) {
+    case NfcStatus.notSupported:
+      print("This device does not have NFC hardware.");
+      return;
+    case NfcStatus.disabled:
+      // Prompt the user to enable NFC.
+      // On Android you can open NFC settings using a package like
+      // `app_settings` or `url_launcher`:
+      //   await launchUrl(Uri.parse('android.settings.NFC_SETTINGS'))
+      print("NFC is turned off. Please enable it in Settings.");
+      return;
+    case NfcStatus.available:
+      break; // Ready to scan
   }
 
   try {
     // 2. Poll and read card details
     final EmvCard card = await _smartEmv.readCard();
-    
-    print("Card Number: ${card.pan}");
-    print("Expiry Date: ${card.expiry}");
-    print("Holder Name: ${card.cardholderName}");
-    print("Card Brand: ${card.label}");
-    
+
+    print("Card Number: \${card.pan}");
+    print("Expiry Date: \${card.expiry}");
+    print("Holder Name: \${card.cardholderName}");
+    print("Card Brand:  \${card.label}");
+
     // Print transaction log if extracted
     if (card.transactions != null) {
       for (var tx in card.transactions!) {
-        print("Tx: ${tx.date} - ${tx.amount} ${tx.currency}");
+        print("Tx: \${tx.date} - \${tx.amount} \${tx.currency}");
       }
     }
   } on SmartEmvException catch (e) {
-    print("Failed to read card: ${e.message} (${e.code})");
+    switch (e.code) {
+      case SmartEmvErrorCode.timeout:
+        print("Scan timed out. Try holding the card still.");
+      case SmartEmvErrorCode.userCancelled:
+        print("Scan cancelled.");
+      default:
+        print("Failed to read card: \${e.message} (\${e.code})");
+    }
   }
 }
 ```
+
+---
+
+## NFC Status
+
+Use `getNfcStatus()` to get a typed `NfcStatus` enum before scanning. This lets you
+distinguish between a device with no NFC hardware and one where NFC is simply toggled off:
+
+| `NfcStatus` | Meaning | Recommended action |
+|---|---|---|
+| `available` | Hardware present and enabled | Proceed with `readCard()` |
+| `disabled` | Hardware present, NFC turned off | Prompt user to open NFC settings |
+| `notSupported` | No NFC hardware on this device | Show permanent error message |
+
+> **Tip (Android):** When `NfcStatus.disabled`, you can open the Android NFC settings screen
+> using [`app_settings`](https://pub.dev/packages/app_settings) or
+> [`url_launcher`](https://pub.dev/packages/url_launcher) from your app:
+> ```dart
+> // Using url_launcher:
+> await launchUrl(Uri.parse('android.settings.NFC_SETTINGS'));
+>
+> // Using app_settings:
+> await AppSettings.openNfcSettings();
+> ```
+> iOS does not expose an NFC on/off toggle, so `NfcStatus.disabled` is never returned on iOS.
+
+---
+
+## Advanced Configuration
+
+### Android Performance Optimization
+
+`SmartEmvConfig.androidReaderModeFlags` passes flags to Android's `NfcAdapter.enableReaderMode`.
+The default value (`0x80 | 0x100`) gives approximately **500ms faster** tag detection by
+skipping automatic NDEF discovery, and suppresses the system beep/vibration so you can
+implement your own audio/haptic feedback.
+
+```dart
+final smartEmv = SmartEmv(
+  config: const SmartEmvConfig(
+    // FLAG_READER_SKIP_NDEF_CHECK  — faster detection (~500ms gain)
+    // FLAG_READER_NO_PLATFORM_SOUNDS — silent; handle beep/haptic yourself
+    androidReaderModeFlags: 0x80 | 0x100, // default
+
+    // Or restore Android platform defaults (NDEF check + system sounds):
+    // androidReaderModeFlags: 0,
+  ),
+);
+```
+
+This field has no effect on iOS.
 
 ---
 

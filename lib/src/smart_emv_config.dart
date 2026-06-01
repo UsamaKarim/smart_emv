@@ -28,6 +28,22 @@ class SmartEmvConfig {
   /// Whether to issue single GET DATA queries for supplementary card metadata. Default: true.
   final bool fetchAdditionalData;
 
+  /// Android-specific NFC reader mode flags passed to [NfcAdapter.enableReaderMode].
+  ///
+  /// These flags allow performance and UX tuning on Android. Common values:
+  /// - `0x80` (`FLAG_READER_SKIP_NDEF_CHECK`): Skip automatic NDEF discovery for
+  ///   approximately 500ms faster tag detection — highly recommended for EMV scanning.
+  /// - `0x100` (`FLAG_READER_NO_PLATFORM_SOUNDS`): Suppress the system beep/vibration
+  ///   on tag detection so you can provide custom audio or haptic feedback.
+  ///
+  /// To combine flags use bitwise OR: `0x80 | 0x100 = 0x180` (recommended for EMV).
+  ///
+  /// Set to `0` to use Android platform defaults (NDEF check enabled, system sounds on).
+  /// Has no effect on iOS.
+  ///
+  /// See: https://developer.android.com/reference/android/nfc/NfcAdapter#enableReaderMode
+  final int androidReaderModeFlags;
+
   /// Creates a [SmartEmvConfig] instance with customizable EMV session options.
   const SmartEmvConfig({
     this.terminalConfig = const TerminalConfig.defaultConfig(),
@@ -39,6 +55,7 @@ class SmartEmvConfig {
         'Approach an EMV payment card to the back of the device.',
     this.readTransactions = true,
     this.fetchAdditionalData = true,
+    this.androidReaderModeFlags = 0x80 | 0x100,
   });
 
   /// Factory creating standard default settings.
@@ -51,5 +68,7 @@ class SmartEmvConfig {
       iosAlertMessage =
           'Approach an EMV payment card to the back of the device.',
       readTransactions = true,
-      fetchAdditionalData = true;
+      fetchAdditionalData = true,
+      // Skip NDEF discovery + suppress platform sounds for faster, silent EMV scanning
+      androidReaderModeFlags = 0x80 | 0x100;
 }

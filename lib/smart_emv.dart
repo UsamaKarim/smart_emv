@@ -6,6 +6,7 @@ export 'src/smart_emv_config.dart';
 export 'src/models/emv_card.dart';
 export 'src/models/emv_transaction.dart';
 export 'src/models/emv_aid.dart';
+export 'src/models/nfc_status.dart';
 export 'src/models/terminal_config.dart';
 export 'src/models/tlv_node.dart';
 export 'src/models/apdu_response.dart';

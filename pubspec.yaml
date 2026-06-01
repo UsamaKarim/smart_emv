@@ -1,0 +1,26 @@
+name: smart_emv
+description: "A pure Dart EMV NFC Reader library that supports reading payment cards (Visa, Mastercard, Amex, Discover, etc.) on Android & iOS using NFC ISO-7816 / APDU commands."
+version: 0.0.1
+homepage: https://github.com/UsamaKarim/smart_emv
+repository: https://github.com/UsamaKarim/smart_emv
+topics:
+  - nfc
+  - emv
+  - payments
+  - credit-card
+
+environment:
+  sdk: ^3.11.4
+  flutter: ">=3.3.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_nfc_kit: ^3.6.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:

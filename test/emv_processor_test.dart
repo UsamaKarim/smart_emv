@@ -137,27 +137,30 @@ void main() {
       expect(() => processor.readCard(), throwsA(isA<SmartEmvException>()));
     });
 
-    test('Should immediately abort the reading sequence and rethrow if the tag is physically lost', () async {
-      final transceiver = _ThrowingTransceiver();
-      final processor = EmvProcessor(
-        transceiver: transceiver,
-        terminalConfig: const TerminalConfig.defaultConfig(),
-        logger: const EmvLogger(enabled: false),
-        fallbackAids: const [EmvAid.visa, EmvAid.mastercard, EmvAid.amex],
-        readTransactions: true,
-        fetchAdditionalData: true,
-      );
+    test(
+      'Should immediately abort the reading sequence and rethrow if the tag is physically lost',
+      () async {
+        final transceiver = _ThrowingTransceiver();
+        final processor = EmvProcessor(
+          transceiver: transceiver,
+          terminalConfig: const TerminalConfig.defaultConfig(),
+          logger: const EmvLogger(enabled: false),
+          fallbackAids: const [EmvAid.visa, EmvAid.mastercard, EmvAid.amex],
+          readTransactions: true,
+          fetchAdditionalData: true,
+        );
 
-      // Verify that calling readCard throws the exception immediately rather than trying other AIDs
-      await expectLater(
-        () => processor.readCard(),
-        throwsA(predicate((e) => e.toString().contains('Tag was lost.'))),
-      );
+        // Verify that calling readCard throws the exception immediately rather than trying other AIDs
+        await expectLater(
+          () => processor.readCard(),
+          throwsA(predicate((e) => e.toString().contains('Tag was lost.'))),
+        );
 
-      // Verify that only 2 transceive calls were made (1 for PPSE, 1 select AID which failed and aborted)
-      // rather than trying all other fallback AIDs
-      expect(transceiver.transceiveCount, equals(2));
-    });
+        // Verify that only 2 transceive calls were made (1 for PPSE, 1 select AID which failed and aborted)
+        // rather than trying all other fallback AIDs
+        expect(transceiver.transceiveCount, equals(2));
+      },
+    );
   });
 }
 
@@ -171,10 +174,11 @@ class _ThrowingTransceiver implements NfcTransceiver {
       throw Exception('Tag was lost.');
     }
     // Return PPSE success on first call indicating Visa AID is present
-    return HexUtils.hexToBytes('6F1D840E325041592E5359532E4444463031A50BBF0C0861064F07A00000000310109000');
+    return HexUtils.hexToBytes(
+      '6F1D840E325041592E5359532E4444463031A50BBF0C0861064F07A00000000310109000',
+    );
   }
 
   @override
   Future<void> close() async {}
 }
-

@@ -52,24 +52,23 @@ Add the NFC permission to your `AndroidManifest.xml` inside `<manifest>`:
 ```xml
 <key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
 <array>
-    <!-- PPSE (Proximity Payment System Environment) - MUST be first -->
-    <string>325041592E5359532E4444463031</string> 
-    <!-- Visa Credit/Debit -->
-    <string>A0000000031010</string>
-    <!-- Visa Electron -->
-    <string>A0000000032010</string>
-    <!-- Mastercard Credit/Debit -->
-    <string>A0000000041010</string>
-    <!-- Maestro -->
-    <string>A0000000043060</string>
-    <!-- American Express -->
-    <string>A000000025010801</string>
-    <!-- Discover -->
-    <string>A0000001523010</string>
-    <!-- JCB -->
-    <string>A0000000651010</string>
-    <!-- UnionPay -->
-    <string>A000000333010101</string>
+    <string>325041592E5359532E4444463031</string> <!-- PPSE -->
+    <string>A0000000031010</string> <!-- Visa -->
+    <string>A0000000032010</string> <!-- Visa Electron -->
+    <string>A0000000032020</string> <!-- V PAY -->
+    <string>A0000000980840</string> <!-- Visa US Common Debit -->
+    <string>A0000000041010</string> <!-- Mastercard -->
+    <string>A0000000043060</string> <!-- Maestro -->
+    <string>A0000000046000</string> <!-- Cirrus -->
+    <string>A0000000042203</string> <!-- Mastercard US Common Debit -->
+    <string>A000000025010801</string> <!-- Amex -->
+    <string>A0000001523010</string> <!-- Discover -->
+    <string>A0000001524010</string> <!-- Discover Common Debit -->
+    <string>A0000000651010</string> <!-- JCB -->
+    <string>A000000333010101</string> <!-- UnionPay -->
+    <string>A0000002771010</string> <!-- Interac -->
+    <string>A0000005241010</string> <!-- RuPay -->
+    <string>A00000038410</string> <!-- Eftpos -->
 </array>
 ```
 

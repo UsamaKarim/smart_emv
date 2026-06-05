@@ -44,6 +44,36 @@ class EmvAid {
   /// Mastercard Cirrus ATM Network (AID: A0000000046000)
   static const cirrus = EmvAid(hex: 'A0000000046000', name: 'Cirrus');
 
+  /// V PAY (AID: A0000000032020)
+  static const vPay = EmvAid(hex: 'A0000000032020', name: 'V PAY');
+
+  /// Visa US Common Debit (AID: A0000000980840)
+  static const visaUsCommonDebit = EmvAid(
+    hex: 'A0000000980840',
+    name: 'Visa US Common Debit',
+  );
+
+  /// Mastercard US Common Debit (AID: A0000000042203)
+  static const mastercardUsCommonDebit = EmvAid(
+    hex: 'A0000000042203',
+    name: 'Mastercard US Common Debit',
+  );
+
+  /// Discover Common Debit (AID: A0000001524010)
+  static const discoverCommonDebit = EmvAid(
+    hex: 'A0000001524010',
+    name: 'Discover Common Debit',
+  );
+
+  /// Interac (AID: A0000002771010)
+  static const interac = EmvAid(hex: 'A0000002771010', name: 'Interac');
+
+  /// RuPay (AID: A0000005241010)
+  static const ruPay = EmvAid(hex: 'A0000005241010', name: 'RuPay');
+
+  /// Eftpos (AID: A00000038410)
+  static const eftpos = EmvAid(hex: 'A00000038410', name: 'Eftpos');
+
   /// Default list of fallback AIDs utilized when PPSE selection is unavailable or fails.
   static const List<EmvAid> defaultAids = [
     visa,
@@ -55,6 +85,13 @@ class EmvAid {
     jcb,
     unionPay,
     cirrus,
+    vPay,
+    visaUsCommonDebit,
+    mastercardUsCommonDebit,
+    discoverCommonDebit,
+    interac,
+    ruPay,
+    eftpos,
   ];
 
   @override

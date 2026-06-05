@@ -1,7 +1,63 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_emv/smart_emv.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('SmartEmv NFC session cleanup', () {
+    const nfcChannel = MethodChannel('flutter_nfc_kit/method');
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(nfcChannel, null);
+    });
+
+    test(
+      'finishes NFC session when poll fails before transceiver exists',
+      () async {
+        final methodCalls = <String>[];
+
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(nfcChannel, (call) async {
+              methodCalls.add(call.method);
+
+              switch (call.method) {
+                case 'getNFCAvailability':
+                  return 'available';
+                case 'poll':
+                  throw PlatformException(
+                    code: '500',
+                    message: 'Error connecting to card',
+                  );
+                case 'finish':
+                  return null;
+              }
+
+              fail('Unexpected NFC method call: ${call.method}');
+            });
+
+        final smartEmv = SmartEmv();
+
+        await expectLater(
+          smartEmv.readCard(),
+          throwsA(
+            isA<SmartEmvException>().having(
+              (e) => e.code,
+              'code',
+              SmartEmvErrorCode.connectionFailed,
+            ),
+          ),
+        );
+
+        expect(
+          methodCalls,
+          containsAllInOrder(['getNFCAvailability', 'poll', 'finish']),
+        );
+      },
+    );
+  });
+
   group('SmartEmv Instantiation and Config Tests', () {
     test('SmartEmv instantiates with default config', () {
       final smartEmv = SmartEmv();
@@ -51,16 +107,22 @@ void main() {
       expect(config.androidReaderModeFlags, equals(0x80 | 0x100));
     });
 
-    test('SmartEmvConfig androidReaderModeFlags can be set to zero (platform default)', () {
-      const config = SmartEmvConfig(androidReaderModeFlags: 0);
-      expect(config.androidReaderModeFlags, equals(0));
-    });
+    test(
+      'SmartEmvConfig androidReaderModeFlags can be set to zero (platform default)',
+      () {
+        const config = SmartEmvConfig(androidReaderModeFlags: 0);
+        expect(config.androidReaderModeFlags, equals(0));
+      },
+    );
 
-    test('SmartEmvConfig androidReaderModeFlags can be set to custom value', () {
-      // Only skip NDEF, keep system sounds
-      const config = SmartEmvConfig(androidReaderModeFlags: 0x80);
-      expect(config.androidReaderModeFlags, equals(0x80));
-    });
+    test(
+      'SmartEmvConfig androidReaderModeFlags can be set to custom value',
+      () {
+        // Only skip NDEF, keep system sounds
+        const config = SmartEmvConfig(androidReaderModeFlags: 0x80);
+        expect(config.androidReaderModeFlags, equals(0x80));
+      },
+    );
   });
 
   group('EmvCard Equality and copyWith Tests', () {
@@ -91,10 +153,7 @@ void main() {
     });
 
     test('EmvCard.copyWith replaces only specified fields', () {
-      final updated = baseCard.copyWith(
-        expiry: '06/30',
-        atc: 42,
-      );
+      final updated = baseCard.copyWith(expiry: '06/30', atc: 42);
       expect(updated.pan, equals(baseCard.pan));
       expect(updated.cardholderName, equals(baseCard.cardholderName));
       expect(updated.expiry, equals('06/30'));
@@ -109,10 +168,22 @@ void main() {
       );
       final card1 = baseCard.copyWith(transactions: [tx1]);
       final card2 = baseCard.copyWith(
-        transactions: [const EmvTransaction(date: '26/06/01', amount: '50.00', currency: '0840')],
+        transactions: [
+          const EmvTransaction(
+            date: '26/06/01',
+            amount: '50.00',
+            currency: '0840',
+          ),
+        ],
       );
       final cardDiff = baseCard.copyWith(
-        transactions: [const EmvTransaction(date: '25/01/10', amount: '10.00', currency: '0840')],
+        transactions: [
+          const EmvTransaction(
+            date: '25/01/10',
+            amount: '10.00',
+            currency: '0840',
+          ),
+        ],
       );
 
       // Same transaction content should be equal
@@ -122,8 +193,12 @@ void main() {
     });
 
     test('EmvCard.== performs deep equality on rawTags map', () {
-      final card1 = baseCard.copyWith(rawTags: {'9F36': '0015', '50': '5649534120444542495'});
-      final card2 = baseCard.copyWith(rawTags: {'9F36': '0015', '50': '5649534120444542495'});
+      final card1 = baseCard.copyWith(
+        rawTags: {'9F36': '0015', '50': '5649534120444542495'},
+      );
+      final card2 = baseCard.copyWith(
+        rawTags: {'9F36': '0015', '50': '5649534120444542495'},
+      );
       final cardDiff = baseCard.copyWith(rawTags: {'9F36': '0099'});
 
       expect(card1, equals(card2));
@@ -164,11 +239,14 @@ void main() {
       expect(updated.currency, equals('0978'));
     });
 
-    test('EmvTransaction.toString returns formatted string for parsed records', () {
-      final result = tx.toString();
-      expect(result, contains('26/06/01'));
-      expect(result, contains('50.00'));
-    });
+    test(
+      'EmvTransaction.toString returns formatted string for parsed records',
+      () {
+        final result = tx.toString();
+        expect(result, contains('26/06/01'));
+        expect(result, contains('50.00'));
+      },
+    );
 
     test('EmvTransaction.toString returns RAW: for unformatted records', () {
       const rawTx = EmvTransaction(raw: 'DEADBEEF');

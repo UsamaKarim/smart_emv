@@ -131,16 +131,7 @@ class SmartEmv {
 
       final card = await processor.readCard();
 
-      // Complete transceiver connection successfully
-      try {
-        await transceiver.close();
-      } catch (e) {
-        _logger.log(
-          'Error closing transceiver gracefully: $e',
-          name: 'SmartEmv',
-        );
-      }
-      _activeTransceiver = null;
+      await _finishSession(transceiver);
 
       return card;
     } on PlatformException catch (pe) {
@@ -150,13 +141,7 @@ class SmartEmv {
         error: pe,
       );
 
-      // Gracefully release transceiver connection
-      if (transceiver != null) {
-        try {
-          await transceiver.close();
-        } catch (_) {}
-      }
-      _activeTransceiver = null;
+      await _finishSession(transceiver);
 
       // Map standard flutter_nfc_kit and platform error codes to SmartEmvErrorCodes
       if (pe.code == '408' ||
@@ -189,12 +174,7 @@ class SmartEmv {
         error: e,
       );
 
-      if (transceiver != null) {
-        try {
-          await transceiver.close();
-        } catch (_) {}
-      }
-      _activeTransceiver = null;
+      await _finishSession(transceiver);
 
       if (e is SmartEmvException) {
         rethrow;
@@ -205,6 +185,22 @@ class SmartEmv {
         message: 'An unexpected error occurred during card reading.',
         originalError: e,
       );
+    }
+  }
+
+  /// Closes the current NFC session, including the gap where native polling
+  /// started but no Dart transceiver was assigned yet.
+  Future<void> _finishSession(NfcTransceiver? transceiver) async {
+    try {
+      if (transceiver != null) {
+        await transceiver.close();
+      } else {
+        await FlutterNfcKit.finish();
+      }
+    } catch (e) {
+      _logger.log('Error closing NFC session gracefully: $e', name: 'SmartEmv');
+    } finally {
+      _activeTransceiver = null;
     }
   }
 

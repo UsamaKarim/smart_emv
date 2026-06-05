@@ -73,14 +73,20 @@
 		<string>325041592E5359532E4444463031</string>
 		<string>A0000000031010</string>
 		<string>A0000000032010</string>
-		<string>A0000000038010</string>
+		<string>A0000000032020</string>
+		<string>A0000000980840</string>
 		<string>A0000000041010</string>
 		<string>A0000000043060</string>
 		<string>A0000000046000</string>
+		<string>A0000000042203</string>
 		<string>A000000025010801</string>
 		<string>A0000001523010</string>
+		<string>A0000001524010</string>
 		<string>A0000000651010</string>
 		<string>A000000333010101</string>
+		<string>A0000002771010</string>
+		<string>A0000005241010</string>
+		<string>A00000038410</string>
 	</array>
 </dict>
 </plist>

@@ -1,6 +1,6 @@
 name: smart_emv
 description: "A pure Dart EMV NFC Reader library that supports reading payment cards (Visa, Mastercard, Amex, Discover, etc.) on Android & iOS using NFC ISO-7816 / APDU commands."
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/UsamaKarim/smart_emv
 repository: https://github.com/UsamaKarim/smart_emv
 topics:
